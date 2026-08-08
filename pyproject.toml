@@ -1,7 +1,7 @@
 [project]
 name = "payment-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "Async payment processing API with JWT authentication, idempotent webhooks, PostgreSQL, and production-grade CI."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
