@@ -1,6 +1,13 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentAdmin, DbSession
+from app.api.openapi import (
+    CONFLICT_RESPONSE,
+    FORBIDDEN_RESPONSE,
+    NOT_FOUND_RESPONSE,
+    UNAUTHORIZED_RESPONSE,
+    VALIDATION_ERROR_RESPONSE,
+)
 from app.schemas.admin import AdminUserCreate, AdminUserUpdate, AdminUserWithAccountsRead
 from app.schemas.user import UserRead
 from app.services.user import (
@@ -12,22 +19,47 @@ from app.services.user import (
     update_user,
 )
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["Admin"])
+
+ADMIN_ACCESS_RESPONSES = {401: UNAUTHORIZED_RESPONSE, 403: FORBIDDEN_RESPONSE}
 
 
-@router.get("/me", response_model=UserRead)
+@router.get(
+    "/me",
+    response_model=UserRead,
+    summary="Get the current administrator",
+    description="Returns the profile for the authenticated administrator.",
+    responses=ADMIN_ACCESS_RESPONSES,
+)
 async def read_admin_me(current_admin: CurrentAdmin) -> UserRead:
     return current_admin
 
 
-@router.get("/users", response_model=list[AdminUserWithAccountsRead])
+@router.get(
+    "/users",
+    response_model=list[AdminUserWithAccountsRead],
+    summary="List regular users",
+    description="Returns every non-administrator user together with their accounts.",
+    responses=ADMIN_ACCESS_RESPONSES,
+)
 async def list_users(
     current_admin: CurrentAdmin, db: DbSession
 ) -> list[AdminUserWithAccountsRead]:
     return await get_regular_users_with_accounts(db)
 
 
-@router.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/users",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a regular user",
+    description="Creates a non-administrator user. Email addresses must be unique.",
+    responses={
+        **ADMIN_ACCESS_RESPONSES,
+        409: CONFLICT_RESPONSE,
+        422: VALIDATION_ERROR_RESPONSE,
+    },
+)
 async def create_admin_user(
     payload: AdminUserCreate, current_admin: CurrentAdmin, db: DbSession
 ) -> UserRead:
@@ -36,7 +68,18 @@ async def create_admin_user(
     return await create_user(db, payload)
 
 
-@router.patch("/users/{user_id}", response_model=UserRead)
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserRead,
+    summary="Update a regular user",
+    description="Updates supplied profile fields for a non-administrator user.",
+    responses={
+        **ADMIN_ACCESS_RESPONSES,
+        404: NOT_FOUND_RESPONSE,
+        409: CONFLICT_RESPONSE,
+        422: VALIDATION_ERROR_RESPONSE,
+    },
+)
 async def update_admin_user(
     user_id: int, payload: AdminUserUpdate, current_admin: CurrentAdmin, db: DbSession
 ) -> UserRead:
@@ -49,7 +92,13 @@ async def update_admin_user(
     return await update_user(db, user, payload)
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a regular user",
+    description="Permanently deletes a non-administrator user and their associated records.",
+    responses={**ADMIN_ACCESS_RESPONSES, 404: NOT_FOUND_RESPONSE, 422: VALIDATION_ERROR_RESPONSE},
+)
 async def delete_admin_user(user_id: int, current_admin: CurrentAdmin, db: DbSession) -> None:
     user = await get_regular_user_by_id(db, user_id)
     if user is None:

@@ -3,6 +3,12 @@ from decimal import Decimal
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import DbSession
+from app.api.openapi import (
+    CONFLICT_RESPONSE,
+    NOT_FOUND_RESPONSE,
+    UNAUTHORIZED_RESPONSE,
+    VALIDATION_ERROR_RESPONSE,
+)
 from app.core.config import settings
 from app.models.payment import Payment
 from app.schemas.webhook import PaymentWebhookRequest, PaymentWebhookResponse
@@ -15,7 +21,7 @@ from app.services.webhook import (
     verify_signature,
 )
 
-router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
 
 async def _already_processed_response(
@@ -30,7 +36,24 @@ async def _already_processed_response(
     )
 
 
-@router.post("/payment", response_model=PaymentWebhookResponse)
+@router.post(
+    "/payment",
+    response_model=PaymentWebhookResponse,
+    summary="Process a signed payment callback",
+    description=(
+        "Credits a user's account after verifying the provider's SHA-256 signature. "
+        "Build the lowercase hexadecimal digest from "
+        "`{account_id}{amount}{transaction_id}{user_id}{SECRET_KEY}` with no separators. "
+        "The operation is idempotent: repeating a known `transaction_id` returns "
+        "`already_processed` and does not credit the account again."
+    ),
+    responses={
+        401: UNAUTHORIZED_RESPONSE,
+        404: NOT_FOUND_RESPONSE,
+        409: CONFLICT_RESPONSE,
+        422: VALIDATION_ERROR_RESPONSE,
+    },
+)
 async def payment_webhook(payload: PaymentWebhookRequest, db: DbSession) -> PaymentWebhookResponse:
     if not verify_signature(payload, settings.SECRET_KEY):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature")

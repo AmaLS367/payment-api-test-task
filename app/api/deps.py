@@ -9,7 +9,10 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(
+    bearerFormat="JWT",
+    description="Paste the access token returned by `POST /api/v1/auth/login`.",
+)
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 TokenDep = Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)]
