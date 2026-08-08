@@ -55,6 +55,13 @@ uv run ruff check .
 uv run alembic upgrade head
 ```
 
+The initial migration creates these test accounts:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| User | `user@example.com` | `user-password` |
+| Administrator | `admin@example.com` | `admin-password` |
+
 To generate a new migration after adding/changing models:
 
 ```bash
