@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentAdmin, DbSession
@@ -21,7 +23,10 @@ from app.services.user import (
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-ADMIN_ACCESS_RESPONSES = {401: UNAUTHORIZED_RESPONSE, 403: FORBIDDEN_RESPONSE}
+ADMIN_ACCESS_RESPONSES: dict[int | str, dict[str, Any]] = {
+    401: UNAUTHORIZED_RESPONSE,
+    403: FORBIDDEN_RESPONSE,
+}
 
 
 @router.get(
@@ -32,7 +37,7 @@ ADMIN_ACCESS_RESPONSES = {401: UNAUTHORIZED_RESPONSE, 403: FORBIDDEN_RESPONSE}
     responses=ADMIN_ACCESS_RESPONSES,
 )
 async def read_admin_me(current_admin: CurrentAdmin) -> UserRead:
-    return current_admin
+    return UserRead.model_validate(current_admin)
 
 
 @router.get(
@@ -45,7 +50,8 @@ async def read_admin_me(current_admin: CurrentAdmin) -> UserRead:
 async def list_users(
     current_admin: CurrentAdmin, db: DbSession
 ) -> list[AdminUserWithAccountsRead]:
-    return await get_regular_users_with_accounts(db)
+    users = await get_regular_users_with_accounts(db)
+    return [AdminUserWithAccountsRead.model_validate(u) for u in users]
 
 
 @router.post(
@@ -65,7 +71,8 @@ async def create_admin_user(
 ) -> UserRead:
     if await get_user_by_email(db, payload.email) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    return await create_user(db, payload)
+    created_user = await create_user(db, payload)
+    return UserRead.model_validate(created_user)
 
 
 @router.patch(
@@ -86,10 +93,13 @@ async def update_admin_user(
     user = await get_regular_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    email_changed = payload.email is not None and payload.email != user.email
-    if email_changed and await get_user_by_email(db, payload.email) is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    return await update_user(db, user, payload)
+    if payload.email is not None and payload.email != user.email:
+        if await get_user_by_email(db, payload.email) is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+            )
+    updated_user = await update_user(db, user, payload)
+    return UserRead.model_validate(updated_user)
 
 
 @router.delete(
@@ -104,3 +114,4 @@ async def delete_admin_user(user_id: int, current_admin: CurrentAdmin, db: DbSes
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     await delete_user(db, user)
+

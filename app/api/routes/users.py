@@ -19,7 +19,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
     responses={401: UNAUTHORIZED_RESPONSE},
 )
 async def read_current_user(current_user: CurrentUser) -> UserRead:
-    return current_user
+    return UserRead.model_validate(current_user)
 
 
 @router.get(
@@ -32,7 +32,8 @@ async def read_current_user(current_user: CurrentUser) -> UserRead:
 async def read_current_user_accounts(
     current_user: CurrentUser, db: DbSession
 ) -> list[AccountRead]:
-    return await get_accounts_by_user_id(db, current_user.id)
+    accounts = await get_accounts_by_user_id(db, current_user.id)
+    return [AccountRead.model_validate(acc) for acc in accounts]
 
 
 @router.get(
@@ -45,4 +46,6 @@ async def read_current_user_accounts(
 async def read_current_user_payments(
     current_user: CurrentUser, db: DbSession
 ) -> list[PaymentRead]:
-    return await get_payments_by_user_id(db, current_user.id)
+    payments = await get_payments_by_user_id(db, current_user.id)
+    return [PaymentRead.model_validate(p) for p in payments]
+

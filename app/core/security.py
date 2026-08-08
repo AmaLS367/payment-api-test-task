@@ -28,6 +28,7 @@ def create_access_token(subject: str, expires_delta: timedelta | None = None) ->
 def decode_access_token(token: str) -> str:
     payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     subject = payload.get("sub")
-    if subject is None:
-        raise JWTError("Token is missing the 'sub' claim")
+    if subject is None or not isinstance(subject, str):
+        raise JWTError("Token is missing or has invalid 'sub' claim")
     return subject
+

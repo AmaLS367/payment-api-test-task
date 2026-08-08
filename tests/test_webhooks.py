@@ -2,10 +2,11 @@ import asyncio
 import hashlib
 import uuid
 from decimal import Decimal
+from typing import Any
 from unittest.mock import patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport, AsyncClient, Response
 from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +35,7 @@ def build_signature(
 
 def build_payload(
     *, account_id: int, amount: Decimal, transaction_id: uuid.UUID, user_id: int
-) -> dict:
+) -> dict[str, Any]:
     return {
         "transaction_id": str(transaction_id),
         "account_id": account_id,
@@ -44,6 +45,7 @@ def build_payload(
             account_id=account_id, amount=amount, transaction_id=transaction_id, user_id=user_id
         ),
     }
+
 
 
 @pytest.fixture
@@ -248,7 +250,7 @@ async def test_payment_webhook_concurrent_duplicate_transaction_id_credits_once(
         account_id=account_id, amount=amount, transaction_id=transaction_id, user_id=SEEDED_USER_ID
     )
 
-    async def post_webhook():
+    async def post_webhook() -> Response:
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             return await ac.post("/api/v1/webhooks/payment", json=payload)
