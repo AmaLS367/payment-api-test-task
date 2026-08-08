@@ -47,7 +47,6 @@ def build_payload(
     }
 
 
-
 @pytest.fixture
 async def other_user(db_session: AsyncSession) -> User:
     unique = uuid.uuid4().hex[:12]

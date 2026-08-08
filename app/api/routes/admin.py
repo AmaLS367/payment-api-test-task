@@ -47,9 +47,7 @@ async def read_admin_me(current_admin: CurrentAdmin) -> UserRead:
     description="Returns every non-administrator user together with their accounts.",
     responses=ADMIN_ACCESS_RESPONSES,
 )
-async def list_users(
-    current_admin: CurrentAdmin, db: DbSession
-) -> list[AdminUserWithAccountsRead]:
+async def list_users(current_admin: CurrentAdmin, db: DbSession) -> list[AdminUserWithAccountsRead]:
     users = await get_regular_users_with_accounts(db)
     return [AdminUserWithAccountsRead.model_validate(u) for u in users]
 
@@ -114,4 +112,3 @@ async def delete_admin_user(user_id: int, current_admin: CurrentAdmin, db: DbSes
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     await delete_user(db, user)
-

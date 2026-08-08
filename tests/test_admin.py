@@ -87,9 +87,7 @@ async def test_create_user_requires_admin_returns_403(client: AsyncClient) -> No
     assert response.status_code == 403
 
 
-async def test_update_user_requires_auth_returns_401(
-    client: AsyncClient, other_user: User
-) -> None:
+async def test_update_user_requires_auth_returns_401(client: AsyncClient, other_user: User) -> None:
     response = await client.patch(
         f"/api/v1/admin/users/{other_user.id}", json={"full_name": "New Name"}
     )
@@ -107,9 +105,7 @@ async def test_update_user_requires_admin_returns_403(
     assert response.status_code == 403
 
 
-async def test_delete_user_requires_auth_returns_401(
-    client: AsyncClient, other_user: User
-) -> None:
+async def test_delete_user_requires_auth_returns_401(client: AsyncClient, other_user: User) -> None:
     response = await client.delete(f"/api/v1/admin/users/{other_user.id}")
     assert response.status_code == 401
 

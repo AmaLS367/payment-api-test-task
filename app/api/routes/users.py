@@ -29,9 +29,7 @@ async def read_current_user(current_user: CurrentUser) -> UserRead:
     description="Returns all accounts owned by the authenticated user.",
     responses={401: UNAUTHORIZED_RESPONSE},
 )
-async def read_current_user_accounts(
-    current_user: CurrentUser, db: DbSession
-) -> list[AccountRead]:
+async def read_current_user_accounts(current_user: CurrentUser, db: DbSession) -> list[AccountRead]:
     accounts = await get_accounts_by_user_id(db, current_user.id)
     return [AccountRead.model_validate(acc) for acc in accounts]
 
@@ -43,9 +41,6 @@ async def read_current_user_accounts(
     description="Returns payment records belonging to the authenticated user.",
     responses={401: UNAUTHORIZED_RESPONSE},
 )
-async def read_current_user_payments(
-    current_user: CurrentUser, db: DbSession
-) -> list[PaymentRead]:
+async def read_current_user_payments(current_user: CurrentUser, db: DbSession) -> list[PaymentRead]:
     payments = await get_payments_by_user_id(db, current_user.id)
     return [PaymentRead.model_validate(p) for p in payments]
-

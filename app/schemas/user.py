@@ -5,7 +5,8 @@ class UserRead(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
-            "examples": [{"id": 1, "email": "user@example.com", "full_name": "Test User"}]},
+            "examples": [{"id": 1, "email": "user@example.com", "full_name": "Test User"}]
+        },
     )
 
     id: int = Field(description="User identifier.")

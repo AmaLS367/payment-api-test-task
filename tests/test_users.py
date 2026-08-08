@@ -105,9 +105,7 @@ async def test_me_returns_other_users_own_data(client: AsyncClient, other_user: 
 async def test_accounts_returns_only_own_accounts(
     client: AsyncClient, other_user_account: Account
 ) -> None:
-    response = await client.get(
-        "/api/v1/users/me/accounts", headers=auth_headers(SEEDED_USER_ID)
-    )
+    response = await client.get("/api/v1/users/me/accounts", headers=auth_headers(SEEDED_USER_ID))
     assert response.status_code == 200
     ids = {item["id"] for item in response.json()}
     assert SEEDED_ACCOUNT_ID in ids
@@ -128,9 +126,7 @@ async def test_accounts_isolated_for_other_user(
 async def test_payments_returns_only_own_payments(
     client: AsyncClient, seeded_user_payment: Payment, other_user_payment: Payment
 ) -> None:
-    response = await client.get(
-        "/api/v1/users/me/payments", headers=auth_headers(SEEDED_USER_ID)
-    )
+    response = await client.get("/api/v1/users/me/payments", headers=auth_headers(SEEDED_USER_ID))
     assert response.status_code == 200
     transaction_ids = {item["transaction_id"] for item in response.json()}
     assert str(seeded_user_payment.transaction_id) in transaction_ids

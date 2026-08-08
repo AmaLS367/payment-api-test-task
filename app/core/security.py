@@ -31,4 +31,3 @@ def decode_access_token(token: str) -> str:
     if subject is None or not isinstance(subject, str):
         raise JWTError("Token is missing or has invalid 'sub' claim")
     return subject
-

@@ -70,9 +70,7 @@ async def test_update_user_service_with_and_without_password(
     assert updated_pw.hashed_password != "oldhash"
 
 
-async def test_admin_update_user_same_email(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_admin_update_user_same_email(client: AsyncClient, db_session: AsyncSession) -> None:
     """Test admin update user endpoint when payload.email == user.email."""
     unique_email = f"same-email-{uuid.uuid4().hex[:8]}@example.com"
     user = User(
@@ -93,9 +91,7 @@ async def test_admin_update_user_same_email(
     assert response.json()["full_name"] == "Updated Same Email User"
 
 
-async def test_admin_update_user_no_email(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_admin_update_user_no_email(client: AsyncClient, db_session: AsyncSession) -> None:
     """Test admin update user endpoint when payload.email is None."""
     unique_email = f"no-email-{uuid.uuid4().hex[:8]}@example.com"
     user = User(

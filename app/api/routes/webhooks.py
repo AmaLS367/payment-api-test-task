@@ -24,9 +24,7 @@ from app.services.webhook import (
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
 
-async def _already_processed_response(
-    db: DbSession, payment: Payment
-) -> PaymentWebhookResponse:
+async def _already_processed_response(db: DbSession, payment: Payment) -> PaymentWebhookResponse:
     account = await get_account(db, payment.account_id)
     return PaymentWebhookResponse(
         status="already_processed",

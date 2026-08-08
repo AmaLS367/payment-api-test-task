@@ -17,4 +17,3 @@ CONFLICT_RESPONSE: dict[str, Any] = {
 VALIDATION_ERROR_RESPONSE: dict[str, Any] = {
     "description": "The request body or path parameters failed validation."
 }
-

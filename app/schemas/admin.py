@@ -22,9 +22,7 @@ class AdminUserCreate(BaseModel):
 
 
 class AdminUserUpdate(BaseModel):
-    model_config = ConfigDict(
-        json_schema_extra={"examples": [{"full_name": "Updated User"}]}
-    )
+    model_config = ConfigDict(json_schema_extra={"examples": [{"full_name": "Updated User"}]})
 
     email: EmailStr | None = Field(default=None, description="Replacement unique email address.")
     full_name: str | None = Field(default=None, description="Replacement display name.")
