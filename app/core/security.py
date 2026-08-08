@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from jose import jwt
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -23,3 +23,11 @@ def create_access_token(subject: str, expires_delta: timedelta | None = None) ->
     )
     payload: dict[str, Any] = {"sub": subject, "exp": expire}
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def decode_access_token(token: str) -> str:
+    payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    subject = payload.get("sub")
+    if subject is None:
+        raise JWTError("Token is missing the 'sub' claim")
+    return subject
