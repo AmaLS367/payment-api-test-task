@@ -74,7 +74,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18-alpine
+        image: postgres:18.4-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -142,14 +142,14 @@ jobs:
         run: cp .env.example .env
 
       - name: Run Docker Compose smoke test
-        run: docker compose up -d --wait
+        run: docker compose -f compose.yaml -f compose.ci.yaml up -d --wait
 
       - name: Verify API health endpoint
         run: curl -f http://localhost:8000/health
 
       - name: Teardown Docker Compose
         if: always()
-        run: docker compose down -v
+        run: docker compose -f compose.yaml -f compose.ci.yaml down -v
 
   ci-success:
     name: CI Success Aggregator
