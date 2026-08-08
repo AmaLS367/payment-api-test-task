@@ -1,15 +1,17 @@
+import asyncio
 import hashlib
 import uuid
 from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
-from httpx import AsyncClient
-from sqlalchemy import insert, select
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routes import webhooks as webhooks_module
 from app.core.config import settings
+from app.main import app
 from app.models.account import Account
 from app.models.payment import Payment
 from app.models.user import User
@@ -224,6 +226,54 @@ async def test_payment_webhook_amount_with_too_many_decimals_returns_422(
     )
     assert result.scalar_one_or_none() is None
     assert await db_session.get(Account, account_id) is None
+
+
+async def test_payment_webhook_concurrent_duplicate_transaction_id_credits_once(
+    db_session: AsyncSession,
+) -> None:
+    """Two genuinely independent requests (each with its own DB session, not the
+    shared rollback-isolated `db_session`/`client` fixtures) race on the same
+    transaction_id. Exactly one must be credited; the loser must see a real,
+    committed duplicate rather than have the error masked.
+    """
+    account_id = unique_account_id()
+    transaction_id = uuid.uuid4()
+    amount = Decimal("40.00")
+
+    account = Account(id=account_id, user_id=SEEDED_USER_ID, balance=Decimal("0.00"))
+    db_session.add(account)
+    await db_session.commit()
+
+    payload = build_payload(
+        account_id=account_id, amount=amount, transaction_id=transaction_id, user_id=SEEDED_USER_ID
+    )
+
+    async def post_webhook():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            return await ac.post("/api/v1/webhooks/payment", json=payload)
+
+    try:
+        first, second = await asyncio.gather(post_webhook(), post_webhook())
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        statuses = sorted([first.json()["status"], second.json()["status"]])
+        assert statuses == ["already_processed", "processed"]
+
+        result = await db_session.execute(
+            select(Payment).where(Payment.transaction_id == transaction_id)
+        )
+        assert len(result.scalars().all()) == 1
+
+        balance_result = await db_session.execute(
+            select(Account.balance).where(Account.id == account_id)
+        )
+        assert balance_result.scalar_one() == amount
+    finally:
+        await db_session.execute(delete(Payment).where(Payment.transaction_id == transaction_id))
+        await db_session.execute(delete(Account).where(Account.id == account_id))
+        await db_session.commit()
 
 
 async def test_payment_webhook_account_creation_race_returns_409(

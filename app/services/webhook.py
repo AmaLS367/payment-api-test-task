@@ -71,5 +71,7 @@ async def create_payment_and_credit(
             )
             await db.flush()
     except IntegrityError:
-        return None
+        if await get_payment_by_transaction_id(db, transaction_id) is not None:
+            return None
+        raise
     return payment
