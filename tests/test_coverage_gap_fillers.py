@@ -154,17 +154,21 @@ async def test_create_payment_and_credit_integrity_error_re_raised(
     """Test create_payment_and_credit raises IntegrityError when payment does not exist."""
     transaction_id = uuid.uuid4()
 
-    with patch.object(
-        db_session, "begin_nested", side_effect=IntegrityError("stmt", {}, Exception("mock error"))
+    with (
+        patch.object(
+            db_session,
+            "begin_nested",
+            side_effect=IntegrityError("stmt", {}, Exception("mock error")),
+        ),
+        pytest.raises(IntegrityError),
     ):
-        with pytest.raises(IntegrityError):
-            await create_payment_and_credit(
-                db_session,
-                transaction_id=transaction_id,
-                account_id=1,
-                user_id=1,
-                amount=Decimal("10.00"),
-            )
+        await create_payment_and_credit(
+            db_session,
+            transaction_id=transaction_id,
+            account_id=1,
+            user_id=1,
+            amount=Decimal("10.00"),
+        )
 
 
 async def test_get_current_user_non_existent_id_raises_401(

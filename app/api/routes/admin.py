@@ -91,11 +91,12 @@ async def update_admin_user(
     user = await get_regular_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if payload.email is not None and payload.email != user.email:
-        if await get_user_by_email(db, payload.email) is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
-            )
+    if (
+        payload.email is not None
+        and payload.email != user.email
+        and await get_user_by_email(db, payload.email) is not None
+    ):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     updated_user = await update_user(db, user, payload)
     return UserRead.model_validate(updated_user)
 
