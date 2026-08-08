@@ -15,45 +15,41 @@ FastAPI backend scaffold with async SQLAlchemy, PostgreSQL, and Alembic. Depende
 
 ## Getting started
 
-### Install dependencies
+### Local setup
 
-```bash
-uv sync
-```
+1. Install dependencies:
+   ```bash
+   uv sync
+   ```
 
-### Configure environment
+2. Configure environment:
+   ```bash
+   cp .env.example .env
+   ```
 
-```bash
-cp .env.example .env
-```
+3. Ensure PostgreSQL is running and matching `DATABASE_URL` in `.env`.
 
-### Run locally
+4. Run database migrations:
+   ```bash
+   uv run alembic upgrade head
+   ```
 
-Requires a running PostgreSQL instance matching `DATABASE_URL` in `.env`.
-
-```bash
-uv run uvicorn app.main:app --reload
-```
+5. Start the application:
+   ```bash
+   uv run uvicorn app.main:app --reload
+   ```
 
 The API will be available at `http://localhost:8000`, with a health check at `http://localhost:8000/health`.
 
-### Run tests
+### Docker Compose
+
+Run PostgreSQL and the API (migrations will execute automatically before startup):
 
 ```bash
-uv run pytest
+docker compose up --build
 ```
 
-### Run Ruff
-
-```bash
-uv run ruff check .
-```
-
-### Run database migrations
-
-```bash
-uv run alembic upgrade head
-```
+### Default Credentials
 
 The initial migration creates these test accounts:
 
@@ -62,19 +58,17 @@ The initial migration creates these test accounts:
 | User | `user@example.com` | `user-password` |
 | Administrator | `admin@example.com` | `admin-password` |
 
-To generate a new migration after adding/changing models:
+### Testing & Code Quality
 
+Run tests:
 ```bash
-uv run alembic revision --autogenerate -m "description"
+uv run pytest
 ```
 
-### Run with Docker Compose
-
+Run linter:
 ```bash
-docker compose up --build
+uv run ruff check .
 ```
-
-This starts PostgreSQL and the API, with the API waiting for the database healthcheck to pass.
 
 ## Project structure
 
@@ -89,17 +83,8 @@ app/
 ├── db/
 │   ├── base.py           # Declarative base
 │   └── session.py        # Async engine + session factory
-├── models/                # SQLAlchemy models (placeholders)
-├── schemas/               # Pydantic schemas (placeholders)
-├── services/              # Business logic (placeholders)
+├── models/                # SQLAlchemy models
+├── schemas/               # Pydantic schemas
+├── services/              # Business logic
 └── main.py                # FastAPI app entrypoint
 ```
-
-## Next steps
-
-- Implement the `User`, `Account`, and `Payment` SQLAlchemy models and generate the initial Alembic migration.
-- Implement Pydantic schemas for those models.
-- Implement JWT login/refresh flow in `app/api/routes/auth.py` using the helpers in `app/core/security.py`.
-- Add `get_current_user` dependency in `app/api/deps.py` once auth is implemented.
-- Implement user, admin, and payment webhook endpoint logic.
-- Add CRUD/service-layer functions as real business logic is introduced.
